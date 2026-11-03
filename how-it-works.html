@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How It Works | Plagiarism Detection Algorithm Explained</title>
+  <meta name="description" content="Step-by-step breakdown of the Natural Language Processing pipeline: Tokenization, Stop-word removal, TF-IDF Vectorization, and Cosine Similarity.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header>
+    <nav class="navbar" aria-label="Main Navigation">
+      <div class="container nav-container">
+        <a href="{{ url_for('index') }}" class="brand-logo" id="brandLogo">
+          <div class="brand-icon-wrapper" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+          <span class="brand-text">Plagi<span>Guard</span></span>
+          <span class="brand-badge">CSE Mini-Project</span>
+        </a>
+
+        <button class="mobile-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+          ☰
+        </button>
+
+        <ul class="nav-menu" id="navMenu">
+          <li><a href="{{ url_for('index') }}" class="nav-link {% if active_page == 'home' %}active{% endif %}">Home</a></li>
+          <li><a href="{{ url_for('checker') }}" class="nav-link {% if active_page == 'checker' %}active{% endif %}">Check Plagiarism</a></li>
+          <li><a href="{{ url_for('results') }}" class="nav-link {% if active_page == 'results' %}active{% endif %}">Results</a></li>
+          <li><a href="{{ url_for('how_it_works') }}" class="nav-link {% if active_page == 'how_it_works' %}active{% endif %}">How It Works</a></li>
+          <li>
+            <a href="{{ url_for('checker') }}" class="btn btn-primary btn-sm">
+              <span>Launch Checker</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+
+      <!-- Header -->
+      <div class="hiw-header">
+        <span class="badge badge-cyan" style="margin-bottom: 12px;">Algorithm &amp; Architecture</span>
+        <h1>How the Plagiarism Checker Works</h1>
+        <p>
+          A straightforward, mathematical walkthrough of the Natural Language Processing (NLP) pipeline that transforms raw unstructured text into comparable vector spaces.
+        </p>
+      </div>
+
+      <!-- 1. The 7-Step Visual Processing Pipeline -->
+      <section class="workflow-pipeline" id="pipeline">
+        <div style="text-align: center; margin-bottom: 36px;">
+          <h2 style="font-size: 1.8rem; margin-bottom: 8px;">The 7-Step Detection Pipeline</h2>
+          <p style="color: var(--text-secondary);">From raw text inputs to final similarity percentage</p>
+        </div>
+
+        <div class="pipeline-cards-list">
+          
+          <!-- Step 1 -->
+          <div class="step-card">
+            <div class="step-card-num">01</div>
+            <h3>Input Documents</h3>
+            <p>
+              The user enters or uploads two documents (Reference Document A and Suspect Document B) via text areas or plain <code>.txt</code> files.
+            </p>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="step-card">
+            <div class="step-card-num">02</div>
+            <h3>Text Preprocessing</h3>
+            <p>
+              Both texts are converted entirely to lowercase, punctuation symbols are stripped, and whitespace variations are normalized for uniform lexical analysis.
+            </p>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="step-card">
+            <div class="step-card-num">03</div>
+            <h3>Tokenization</h3>
+            <p>
+              The continuous strings of characters are segmented into discrete atomic units called <strong>tokens</strong> (individual words) using regex word boundaries (<code>\b\w+\b</code>).
+            </p>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="step-card">
+            <div class="step-card-num">04</div>
+            <h3>Stop-Word Handling</h3>
+            <p>
+              Extremely frequent grammatical words with little semantic uniqueness (such as <em>"the", "is", "at", "which", "on"</em>) are filtered out so they do not artificially inflate similarity.
+            </p>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="step-card">
+            <div class="step-card-num">05</div>
+            <h3>TF-IDF Vectorization</h3>
+            <p>
+              Each remaining word is converted into a real-valued numerical weight using <strong>Term Frequency &times; Inverse Document Frequency</strong>, reflecting its importance within the document corpus.
+            </p>
+          </div>
+
+          <!-- Step 6 -->
+          <div class="step-card">
+            <div class="step-card-num">06</div>
+            <h3>Cosine Similarity</h3>
+            <p>
+              The system calculates the cosine of the angle between the two high-dimensional document vectors. This metric evaluates orientation rather than document length.
+            </p>
+          </div>
+
+          <!-- Step 7 -->
+          <div class="step-card">
+            <div class="step-card-num">07</div>
+            <h3>Result Generation</h3>
+            <p>
+              The raw cosine coefficient (ranging from <code>0.0</code> to <code>1.0</code>) is multiplied by 100 to yield a clean percentage and categorized as Low, Moderate, or High similarity.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 2. Core NLP & Mathematical Concepts Definitions -->
+      <section class="theory-grid" id="definitions">
+
+        <!-- Card 1: NLP -->
+        <div class="theory-card">
+          <span class="theory-card-badge">Foundation Concept</span>
+          <h3>1. Natural Language Processing (NLP)</h3>
+          <p>
+            Natural Language Processing is a subfield of artificial intelligence and computer science focused on enabling computers to understand, interpret, and manipulate human language.
+          </p>
+          <p>
+            In plagiarism detection, NLP bridges the gap between unstructured text written by humans and mathematical structures that computers can evaluate using linear algebra.
+          </p>
+          <div class="formula-box">
+            Text &rarr; Tokens &rarr; Vectors &rarr; Mathematical Distance
+          </div>
+        </div>
+
+        <!-- Card 2: TF-IDF -->
+        <div class="theory-card" id="algorithm">
+          <span class="theory-card-badge">Feature Extraction</span>
+          <h3>2. What is TF-IDF?</h3>
+          <p>
+            <strong>TF-IDF</strong> stands for <em>Term Frequency &ndash; Inverse Document Frequency</em>. It quantifies how important a word is to a specific document relative to a collection of documents.
+          </p>
+          <p>
+            <strong>TF (Term Frequency):</strong> Measures how frequently a word appears in a single document.<br>
+            <strong>IDF (Inverse Document Frequency):</strong> Diminishes the weight of terms that occur frequently across all documents.
+          </p>
+          <div class="formula-box">
+            TF(t, d) = Count(t in d) / Total_Words(d)<br>
+            IDF(t, D) = ln[(1 + N) / (1 + df(t))] + 1<br>
+            TF-IDF(t, d, D) = TF(t, d) &times; IDF(t, D)
+          </div>
+        </div>
+
+        <!-- Card 3: Cosine Similarity -->
+        <div class="theory-card" id="cosine">
+          <span class="theory-card-badge">Distance Metric</span>
+          <h3>3. What is Cosine Similarity?</h3>
+          <p>
+            Cosine similarity measures the cosine of the angle between two non-zero vectors in an inner product space.
+          </p>
+          <p>
+            Unlike Euclidean distance (which is sensitive to document length differences), Cosine similarity measures vector direction. Two documents discussing the exact same topic will have vectors pointing in nearly the same direction, yielding a score near <code>1.0</code> (100%).
+          </p>
+          <div class="formula-box">
+            Cosine Similarity(&theta;) = (A &bull; B) / (||A|| &times; ||B||)
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 3. Worked Viva Example: Two Similar Sentences -->
+      <section class="example-card" id="example">
+        <span class="badge badge-cyan" style="margin-bottom: 12px;">Viva Demonstration Walkthrough</span>
+        <h2>Step-by-Step Viva Example: Comparing Two Sentences</h2>
+        <p style="color: var(--text-secondary); max-width: 800px;">
+          Here is a concrete mathematical walkthrough showing exactly how the algorithm calculates similarity between two slightly paraphrased sentences during an exam or viva demonstration.
+        </p>
+
+        <div class="example-sentences-grid">
+          <div class="example-sentence-box">
+            <div class="example-sentence-title">Sentence A (Original):</div>
+            <div class="example-sentence-text">
+              "Machine learning is fascinating and powerful."
+            </div>
+          </div>
+
+          <div class="example-sentence-box">
+            <div class="example-sentence-title">Sentence B (Comparison):</div>
+            <div class="example-sentence-text">
+              "Deep learning is powerful and fascinating."
+            </div>
+          </div>
+        </div>
+
+        <h4 style="font-size: 1.1rem; margin-top: 24px; margin-bottom: 12px; color: var(--accent);">
+          Step A: Tokenization &amp; Stop-Word Removal
+        </h4>
+        <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 16px;">
+          Stop words like <em>"is"</em> and <em>"and"</em> are removed. The combined vocabulary extracted from both sentences is:
+          <code style="color: var(--accent); font-family: var(--font-mono);">["deep", "fascinating", "learning", "machine", "powerful"]</code>.
+        </p>
+
+        <h4 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--accent);">
+          Step B: Normalized Vector Representation (Sample Weights)
+        </h4>
+
+        <table class="calc-breakdown-table">
+          <thead>
+            <tr>
+              <th>Vocabulary Term</th>
+              <th>Sentence A Vector (A<sub>i</sub>)</th>
+              <th>Sentence B Vector (B<sub>i</sub>)</th>
+              <th>Dot Product (A<sub>i</sub> &times; B<sub>i</sub>)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="code-cell">deep</td>
+              <td class="code-cell">0.0000</td>
+              <td class="code-cell">0.5774</td>
+              <td class="code-cell">0.0000</td>
+            </tr>
+            <tr>
+              <td class="code-cell">fascinating</td>
+              <td class="code-cell">0.5000</td>
+              <td class="code-cell">0.4082</td>
+              <td class="code-cell">0.2041</td>
+            </tr>
+            <tr>
+              <td class="code-cell">learning</td>
+              <td class="code-cell">0.5000</td>
+              <td class="code-cell">0.4082</td>
+              <td class="code-cell">0.2041</td>
+            </tr>
+            <tr>
+              <td class="code-cell">machine</td>
+              <td class="code-cell">0.7071</td>
+              <td class="code-cell">0.0000</td>
+              <td class="code-cell">0.0000</td>
+            </tr>
+            <tr>
+              <td class="code-cell">powerful</td>
+              <td class="code-cell">0.5000</td>
+              <td class="code-cell">0.4082</td>
+              <td class="code-cell">0.2041</td>
+            </tr>
+            <tr style="font-weight: 700; background: var(--bg-card-subtle);">
+              <td>Sum &Sigma;</td>
+              <td class="code-cell">||A|| = 1.0</td>
+              <td class="code-cell">||B|| = 1.0</td>
+              <td class="code-cell" style="color: var(--accent);">Cosine Similarity &approx; 0.6123 (61.2%)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="background: var(--bg-card); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: var(--radius-sm); font-size: 0.9rem; color: var(--text-secondary);">
+          <strong>Interpretation:</strong> 
+          Because 3 out of 4 non-stop words (<em>"fascinating", "learning", "powerful"</em>) match between the two sentences, the cosine vector angle is sharp, generating a high similarity score of ~61.2% despite word order shuffling.
+        </div>
+      </section>
+
+      <!-- 4. Limitations & Academic Integrity Section -->
+      <section class="limitations-card" id="limitations">
+        <h3>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          System Limitations &amp; Ethical Considerations
+        </h3>
+        <p>
+          While TF-IDF and Cosine Similarity provide a powerful and mathematically objective metric for lexical overlap, the numerical score does <strong>not independently establish intentional academic dishonesty</strong>.
+        </p>
+        <ul class="limitations-list">
+          <li>
+            <strong>Common Domain Terminology:</strong> Technical essays within computer science frequently use identical terms (e.g. <em>"relational database management system", "polymorphism in object-oriented programming"</em>) which elevate similarity without any unethical copying.
+          </li>
+          <li>
+            <strong>Properly Attributed Quotes:</strong> Authors who quote reference material verbatim and provide full bibliographic citations will still show high lexical similarity in algorithmic scans.
+          </li>
+          <li>
+            <strong>Synonym Replacement &amp; Semantic Shift:</strong> Standard bag-of-words TF-IDF relies on exact root tokens. Thorough rewriting using synonyms without changing concepts requires deeper semantic transformer models (such as BERT or Sentence-Transformers).
+          </li>
+          <li>
+            <strong>Requirement of Human Review:</strong> The tool is designed to assist educators and students in identifying sections that warrant manual editorial inspection, not to render automated disciplinary judgments.
+          </li>
+        </ul>
+      </section>
+
+      <!-- Bottom Navigation Prompt -->
+      <div style="text-align: center; margin-top: 48px;">
+        <a href="{{ url_for('checker') }}" class="btn btn-primary btn-lg" id="hiwCheckerBtn">
+          <span>Try It Yourself on the Checker Page</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h4><span class="brand-text">Plagi<span>Guard</span></span></h4>
+          <p>
+            BTech CSE Mini-Project: Intelligent Document Similarity Detector with Scikit-Learn TF-IDF Vectorizer and Cosine Vector Distance.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h5>Pages</h5>
+          <ul class="footer-links">
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li><a href="{{ url_for('checker') }}">Check Plagiarism</a></li>
+            <li><a href="{{ url_for('results') }}">Results Dashboard</a></li>
+            <li><a href="{{ url_for('how_it_works') }}">How It Works</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Academic Viva Focus</h5>
+          <ul class="footer-links">
+            <li><a href="#pipeline">7-Step Pipeline</a></li>
+            <li><a href="#definitions">NLP &amp; TF-IDF Theory</a></li>
+            <li><a href="#example">Sentence Comparison</a></li>
+            <li><a href="#limitations">Ethical Limitations</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>&copy; 2026 Plagiarism Checker &bull; BTech CSE Mini-Project.</div>
+        <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent);">
+          Documentation for College Mini-Project Defense
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

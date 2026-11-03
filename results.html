@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analysis Results | PlagiGuard Plagiarism Checker</title>
+  <meta name="description" content="View comprehensive mathematical similarity analysis, TF-IDF vector score, vocabulary overlap, and document statistics.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header>
+    <nav class="navbar" aria-label="Main Navigation">
+      <div class="container nav-container">
+        <a href="{{ url_for('index') }}" class="brand-logo" id="brandLogo">
+          <div class="brand-icon-wrapper" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+          <span class="brand-text">Plagi<span>Guard</span></span>
+          <span class="brand-badge">CSE Mini-Project</span>
+        </a>
+
+        <button class="mobile-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+          ☰
+        </button>
+
+        <ul class="nav-menu" id="navMenu">
+          <li><a href="{{ url_for('index') }}" class="nav-link {% if active_page == 'home' %}active{% endif %}">Home</a></li>
+          <li><a href="{{ url_for('checker') }}" class="nav-link {% if active_page == 'checker' %}active{% endif %}">Check Plagiarism</a></li>
+          <li><a href="{{ url_for('results') }}" class="nav-link {% if active_page == 'results' %}active{% endif %}">Results</a></li>
+          <li><a href="{{ url_for('how_it_works') }}" class="nav-link {% if active_page == 'how_it_works' %}active{% endif %}">How It Works</a></li>
+          <li>
+            <a href="{{ url_for('checker') }}" class="btn btn-primary btn-sm">
+              <span>Compare New</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+
+      {% if not has_data %}
+        <!-- EMPTY STATE (Opened without comparing documents) -->
+        <div class="empty-state-card" id="emptyStateContainer">
+          <div class="empty-state-icon" aria-hidden="true">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <line x1="11" y1="8" x2="11" y2="14"/>
+              <line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+          </div>
+          <h2>No Document Comparison Data Found</h2>
+          <p>
+            You have accessed the results page directly without running a document comparison.
+            Please submit two documents on the Plagiarism Checker page to calculate their TF-IDF cosine similarity.
+          </p>
+          <a href="{{ url_for('checker') }}" class="btn btn-primary btn-lg" id="emptyStateCheckBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+            <span>Go to Plagiarism Checker</span>
+          </a>
+        </div>
+
+      {% else %}
+        <!-- ACTUAL COMPARISON RESULTS DASHBOARD -->
+
+        <div class="results-header">
+          <div>
+            <span class="badge badge-cyan" style="margin-bottom: 8px;">Analysis Completed &bull; {{ result.elapsed_ms }} ms</span>
+            <h1>Similarity Analysis Report</h1>
+          </div>
+          <div class="results-actions-top">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="printReport()" id="printReportBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+              </svg>
+              <span>Print / Save PDF</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="copyReportSummary('{{ result.similarity_percentage }}', '{{ result.status }}')" id="copySummaryBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span>Copy Summary</span>
+            </button>
+            <a href="{{ url_for('checker') }}" class="btn btn-primary btn-sm" id="compareNewBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+              <span>Compare New Documents</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- 1. Primary Score Overview Card with Circular Progress Gauge -->
+        <section class="score-overview-card" id="scoreOverview">
+          
+          <!-- Circular SVG Gauge -->
+          <div class="gauge-container">
+            <svg viewBox="0 0 36 36" class="circular-chart" aria-label="Similarity Percentage Gauge">
+              <path class="circle-bg"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <path id="gaugeCirclePath" class="circle"
+                data-target-percentage="{{ result.similarity_percentage }}"
+                stroke="{{ result.status_color }}"
+                stroke-dasharray="0, 100"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+            </svg>
+            <div class="gauge-percentage">
+              <div class="gauge-val" id="animatedPercentage">{{ result.similarity_percentage }}%</div>
+              <div class="gauge-label">Cosine Match</div>
+            </div>
+          </div>
+
+          <!-- Score Details & Explanation -->
+          <div class="score-info">
+            <div class="score-badge-row">
+              <span class="badge badge-{{ result.status_category }}" style="font-size: 0.85rem; padding: 6px 16px;">
+                {{ result.status }}
+              </span>
+              <span style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">
+                Vector Cosine Metric: {{ result.similarity_score }} / 1.0000
+              </span>
+            </div>
+
+            <div class="score-status-title" style="color: {{ result.status_color }};">
+              {{ result.status }} ({{ result.similarity_percentage }}%)
+            </div>
+
+            <p class="score-explanation">
+              {{ result.status_description }}
+            </p>
+
+            <!-- Threshold Scale Reference -->
+            <div class="threshold-scale">
+              <div class="scale-label">
+                <span>Plagiarism Threshold Reference Scale</span>
+                <span style="color: var(--text-muted); font-weight: normal; font-size: 0.75rem;">Illustrative Academic Brackets</span>
+              </div>
+              <div class="scale-bars">
+                <div class="scale-segment low" title="0% - 20%: Low Similarity"></div>
+                <div class="scale-segment mod" title="Above 20% - 50%: Moderate Similarity"></div>
+                <div class="scale-segment high" title="Above 50% - 100%: High Similarity"></div>
+              </div>
+              <div class="scale-legend">
+                <span>0% - 20% (Low)</span>
+                <span>20% - 50% (Moderate)</span>
+                <span>50% - 100% (High)</span>
+              </div>
+            </div>
+
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+              * Note: These thresholds serve as illustrative guidelines for college evaluations and do not constitute an absolute universal academic standard.
+            </div>
+          </div>
+
+        </section>
+
+        <!-- 2. Detailed Document Statistics Grid -->
+        <section class="stats-grid" id="statsSection">
+
+          <!-- Document A Stats -->
+          <div class="stats-card" id="statsDocA">
+            <div class="stats-card-header">
+              <div class="stats-card-title">Document A (Reference)</div>
+              <span class="badge badge-cyan">Baseline</span>
+            </div>
+            <table class="stats-table">
+              <tbody>
+                <tr>
+                  <td class="metric-name">Total Word Count</td>
+                  <td class="metric-val">{{ result.stats_a.word_count }}</td>
+                </tr>
+                <tr>
+                  <td class="metric-name">Character Count (with spaces)</td>
+                  <td class="metric-val">{{ result.stats_a.char_count }}</td>
+                </tr>
+                <tr>
+                  <td class="metric-name">Character Count (without spaces)</td>
+                  <td class="metric-val">{{ result.stats_a.char_no_space }}</td>
+                </tr>
+                <tr>
+                  <td class="metric-name">Sentence Count</td>
+                  <td class="metric-val">{{ result.stats_a.sentence_count }}</td>
+                </tr>
+                <tr>
+                  <td class="metric-name">Average Word Length</td>
+                  <td class="metric-val">{{ result.stats_a.avg_word_length }} chars</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Document B Stats -->
+          <div class="stats-card" id="statsDocB">
+            <div class="stats-card-header">
+              <div class="stats-card-title">Document B (Comparison)</div>
+              <span class="badge badge-cyan">Tested Document</span>
+            </div>
+            <table class="stats-table">
+              <tbody>
+                <tr>
+                  <td class="metric-name">Total Word Count</td>
+                  <td class="metric-val">{{ result.stats_b.word_count }}</td>
+                </tr>
+                <tr>
+                  <td class="metric-name">Character Count (with spaces)</td>
+                  <td class="metric-val">{{ result.stats_b.char_count }}</td>
+                </tr>
+                <tr>
+                  <td class="metric-name">Character Count (without spaces)</td>
+                  <td class="metric-val">{{ result.stats_b.char_no_space }}</td>
+                </tr>
+                <tr>
+                  <td class="metric-name">Sentence Count</td>
+                  <td class="metric-val">{{ result.stats_b.sentence_count }}</td>
+                </tr>
+                <tr>
+                  <td class="metric-name">Average Word Length</td>
+                  <td class="metric-val">{{ result.stats_b.avg_word_length }} chars</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </section>
+
+        <!-- 3. Top Overlapping Keywords (TF-IDF Identified) -->
+        {% if result.shared_terms and result.shared_terms|length > 0 %}
+          <section class="shared-keywords-card" id="keywordsSection">
+            <h3>Key Overlapping Terms (TF-IDF Weightings)</h3>
+            <p style="font-size: 0.92rem; color: var(--text-secondary);">
+              The following significant vocabulary tokens appeared in both documents and contributed most heavily to the cosine vector alignment. Stop words were eliminated.
+            </p>
+            <div class="keywords-tags-cloud">
+              {% for item in result.shared_terms %}
+                <span class="keyword-tag">
+                  <span>{{ item.term }}</span>
+                  <span class="kw-score">{{ item.weight }}</span>
+                </span>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        <!-- 4. Document Snippet Previews -->
+        <section class="snippets-grid" id="snippetsSection">
+          <div class="snippet-card">
+            <div class="snippet-card-header">
+              Document A Extract (First 500 Characters)
+            </div>
+            <div class="snippet-body">{{ result.sample_a_snippet }}</div>
+          </div>
+
+          <div class="snippet-card">
+            <div class="snippet-card-header">
+              Document B Extract (First 500 Characters)
+            </div>
+            <div class="snippet-body">{{ result.sample_b_snippet }}</div>
+          </div>
+        </section>
+
+        <!-- Bottom Action Bar -->
+        <div style="text-align: center; margin-top: 12px; margin-bottom: 36px;">
+          <a href="{{ url_for('checker') }}" class="btn btn-primary btn-lg" id="bottomCompareNewBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+            <span>Compare Another Pair of Documents</span>
+          </a>
+        </div>
+
+      {% endif %}
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h4><span class="brand-text">Plagi<span>Guard</span></span></h4>
+          <p>
+            BTech CSE Mini-Project: Intelligent Document Similarity Detector with Scikit-Learn TF-IDF Vectorizer and Cosine Vector Distance.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h5>Pages</h5>
+          <ul class="footer-links">
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li><a href="{{ url_for('checker') }}">Check Plagiarism</a></li>
+            <li><a href="{{ url_for('results') }}">Results Dashboard</a></li>
+            <li><a href="{{ url_for('how_it_works') }}">How It Works</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Algorithm Details</h5>
+          <ul class="footer-links">
+            <li><a href="{{ url_for('how_it_works') }}#pipeline">7-Step Processing Pipeline</a></li>
+            <li><a href="{{ url_for('how_it_works') }}#example">Worked Viva Calculation</a></li>
+            <li><a href="{{ url_for('how_it_works') }}#limitations">Limitations &amp; Context</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>&copy; 2026 Plagiarism Checker &bull; BTech CSE Mini-Project.</div>
+        <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent);">
+          Real-Time Mathematical Output &bull; No Hardcoded Values
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

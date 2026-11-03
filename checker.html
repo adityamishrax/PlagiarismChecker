@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check Plagiarism | PlagiGuard Document Comparator</title>
+  <meta name="description" content="Compare two text documents or uploaded .txt files to compute mathematical similarity using scikit-learn TF-IDF Vectorizer and Cosine Similarity.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header>
+    <nav class="navbar" aria-label="Main Navigation">
+      <div class="container nav-container">
+        <a href="{{ url_for('index') }}" class="brand-logo" id="brandLogo">
+          <div class="brand-icon-wrapper" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+          <span class="brand-text">Plagi<span>Guard</span></span>
+          <span class="brand-badge">CSE Mini-Project</span>
+        </a>
+
+        <button class="mobile-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+          ☰
+        </button>
+
+        <ul class="nav-menu" id="navMenu">
+          <li><a href="{{ url_for('index') }}" class="nav-link {% if active_page == 'home' %}active{% endif %}">Home</a></li>
+          <li><a href="{{ url_for('checker') }}" class="nav-link {% if active_page == 'checker' %}active{% endif %}">Check Plagiarism</a></li>
+          <li><a href="{{ url_for('results') }}" class="nav-link {% if active_page == 'results' %}active{% endif %}">Results</a></li>
+          <li><a href="{{ url_for('how_it_works') }}" class="nav-link {% if active_page == 'how_it_works' %}active{% endif %}">How It Works</a></li>
+          <li>
+            <a href="{{ url_for('checker') }}" class="btn btn-primary btn-sm">
+              <span>Launch Checker</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+
+      <!-- Header -->
+      <div class="checker-header">
+        <span class="badge badge-cyan" style="margin-bottom: 12px;">Document Similarity Engine</span>
+        <h1>Compare Documents for Plagiarism</h1>
+        <p>Paste text directly into the panels or upload plain <code>.txt</code> files for mathematical vector comparison.</p>
+      </div>
+
+      <!-- Flash Error Notifications -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}" role="alert">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Sample Loader Bar (Viva / Demonstration Utility) -->
+      <div class="sample-loader-bar">
+        <span class="sample-loader-label">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Quick Demo Presets:
+        </span>
+        <button type="button" class="btn btn-secondary btn-sm" data-sample-type="high" id="sampleHighBtn">
+          Sample 1: High Similarity (~85%)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" data-sample-type="moderate" id="sampleModBtn">
+          Sample 2: Moderate (~38%)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" data-sample-type="low" id="sampleLowBtn">
+          Sample 3: Low (~5%)
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="clearDocument('both')" id="clearAllTopBtn">
+          Clear Both
+        </button>
+        <span id="sampleFeedback" style="display:none; color: var(--accent); font-size: 0.82rem; font-weight: 600; margin-left: 8px;"></span>
+      </div>
+
+      <!-- Main Form -->
+      <form id="comparisonForm" action="{{ url_for('compare') }}" method="POST" enctype="multipart/form-data">
+
+        <!-- Two Side-by-Side Panels -->
+        <div class="comparison-grid">
+
+          <!-- PANEL 1: Document A -->
+          <div class="panel-card" id="panelDocA">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span class="badge badge-cyan">Document A</span>
+                <span>Original / Reference</span>
+              </div>
+              <div class="panel-actions">
+                <span id="fileBadgeA" class="badge badge-cyan" style="display:none; font-size: 0.72rem;"></span>
+                <label class="btn btn-secondary btn-sm upload-btn-wrapper" title="Upload a plain text file">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  <span>Upload .txt</span>
+                  <input type="file" id="docA_file" name="docA_file" accept=".txt">
+                </label>
+                <button type="button" class="btn btn-outline btn-sm" onclick="clearDocument('A')" title="Clear Document A">
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div class="panel-textarea-wrapper">
+              <textarea 
+                id="docA_text" 
+                name="docA_text" 
+                class="panel-textarea" 
+                placeholder="Enter, paste, or drop the reference text here (e.g. source article, student submission, or research paper)..."
+                spellcheck="true"
+              ></textarea>
+            </div>
+
+            <div class="panel-footer">
+              <div class="counter-group">
+                <div class="counter-item">Words: <span id="wordsA">0</span></div>
+                <div class="counter-item">Characters: <span id="charsA">0</span></div>
+                <div class="counter-item">Sentences: <span id="sentencesA">0</span></div>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">UTF-8 Text</div>
+            </div>
+          </div>
+
+          <!-- PANEL 2: Document B -->
+          <div class="panel-card" id="panelDocB">
+            <div class="panel-header">
+              <div class="panel-title">
+                <span class="badge badge-cyan">Document B</span>
+                <span>Suspect / Comparison</span>
+              </div>
+              <div class="panel-actions">
+                <span id="fileBadgeB" class="badge badge-cyan" style="display:none; font-size: 0.72rem;"></span>
+                <label class="btn btn-secondary btn-sm upload-btn-wrapper" title="Upload a plain text file">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  <span>Upload .txt</span>
+                  <input type="file" id="docB_file" name="docB_file" accept=".txt">
+                </label>
+                <button type="button" class="btn btn-outline btn-sm" onclick="clearDocument('B')" title="Clear Document B">
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div class="panel-textarea-wrapper">
+              <textarea 
+                id="docB_text" 
+                name="docB_text" 
+                class="panel-textarea" 
+                placeholder="Enter, paste, or drop the suspect text here to compare against Document A..."
+                spellcheck="true"
+              ></textarea>
+            </div>
+
+            <div class="panel-footer">
+              <div class="counter-group">
+                <div class="counter-item">Words: <span id="wordsB">0</span></div>
+                <div class="counter-item">Characters: <span id="charsB">0</span></div>
+                <div class="counter-item">Sentences: <span id="sentencesB">0</span></div>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">UTF-8 Text</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Submit & Control Bar -->
+        <div class="checker-submit-bar">
+          <div class="checker-btn-group">
+            <button type="submit" class="btn btn-primary btn-lg" id="compareSubmitBtn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <span>Compare Documents</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-lg" onclick="clearDocument('both')" id="clearBothMainBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+              </svg>
+              <span>Reset Both Panels</span>
+            </button>
+          </div>
+        </div>
+
+      </form>
+
+      <!-- Educational Disclaimer Note -->
+      <div class="disclaimer-note" id="disclaimerNote">
+        <div class="disclaimer-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+        </div>
+        <div class="disclaimer-text">
+          <h5>Important Academic Note on Similarity vs. Plagiarism</h5>
+          <p>
+            Text similarity calculated by TF-IDF and Cosine Similarity measures mathematical token and vector overlap. A high score does not automatically confirm intentional plagiarism: legitimate direct quotations, shared bibliography citations, mathematical formulas, and standard technical idioms naturally increase similarity scores. A qualified academic evaluator must review the context.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay" role="dialog" aria-modal="true" aria-label="Processing comparison">
+    <div class="spinner"></div>
+    <div class="loading-text">Analyzing Lexical Similarity...</div>
+    <div class="loading-subtext">Executing TF-IDF Vectorization &amp; Cosine Metric in Python Flask</div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h4><span class="brand-text">Plagi<span>Guard</span></span></h4>
+          <p>
+            BTech CSE Mini-Project: Intelligent Document Similarity Detector with Scikit-Learn TF-IDF Vectorizer and Cosine Vector Distance.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h5>Pages</h5>
+          <ul class="footer-links">
+            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li><a href="{{ url_for('checker') }}">Check Plagiarism</a></li>
+            <li><a href="{{ url_for('results') }}">Results Dashboard</a></li>
+            <li><a href="{{ url_for('how_it_works') }}">How It Works</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Documentation</h5>
+          <ul class="footer-links">
+            <li><a href="{{ url_for('how_it_works') }}#algorithm">TF-IDF Formula</a></li>
+            <li><a href="{{ url_for('how_it_works') }}#cosine">Cosine Similarity</a></li>
+            <li><a href="{{ url_for('how_it_works') }}#limitations">Academic Guidelines</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>&copy; 2026 Plagiarism Checker &bull; BTech CSE Mini-Project.</div>
+        <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent);">
+          Status: Operational &bull; In-Memory Processing
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
